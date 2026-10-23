@@ -285,7 +285,7 @@
   }
   function normalizeSearch(value) {
     return String(value || '').toLowerCase().normalize('NFD')
-      .replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+      .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
   }
   function haystack(p) {
     return normalizeSearch(p.name + ' ' + p.category + ' ' + (p.aliases || []).join(' '));
@@ -295,8 +295,8 @@
     if (!normalizedQuery) return true;
     const h = haystack(p);
     if (h.includes(normalizedQuery)) return true;
-    const queryWords = normalizedQuery.split(/\\s+/).filter(Boolean);
-    const haystackWords = h.split(/\\s+/).filter(Boolean);
+    const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
+    const haystackWords = h.split(/\s+/).filter(Boolean);
     return queryWords.every(word => {
       if (haystackWords.some(token => token.startsWith(word))) return true;
       if (word.length < 4) return false;
@@ -541,6 +541,7 @@
       map.removeLayer(userAccuracyCircle);
       userAccuracyCircle = null;
     }
+    if (userMarker && userMarker.bringToFront) userMarker.bringToFront();
     const nearest = Math.min(...places.map(p => haversine(lat, lng, p.lat, p.lng)));
     if (nearest > 3000) {
       setStatus("You're about " + fmt(nearest) + " from the nearest campus place, so the map stays on campus. Try the demo location to see how it works.", true);
