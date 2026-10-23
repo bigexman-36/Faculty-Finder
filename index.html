@@ -424,7 +424,10 @@
     return c === 'faculty' ? 'F'
       : c === 'hostel' ? 'H'
       : c === 'food' ? 'E'
-      : c === 'bank' ? '
+      : c === 'bank' ? '$'
+      : c === 'sports' ? 'S'
+      : '•';
+  }
   function matchPlace(p, q) {
     const normalizedQuery = normalizeSearch(q);
     if (!normalizedQuery) return true;
