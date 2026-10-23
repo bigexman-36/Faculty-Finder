@@ -644,6 +644,7 @@
   function clearRoute(silent) {
     routeRequestId++;
     if (routeAbortController) { routeAbortController.abort(); routeAbortController = null; }
+    $('preview').disabled = false;
     if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
     routeInfo = null;
     $('clear').hidden = true;
@@ -661,8 +662,9 @@
     const requestId = routeRequestId;
     const start = { lat: user.lat, lng: user.lng };
     const destination = { ...selected };
-    routeAbortController = new AbortController();
-    const timeoutId = setTimeout(() => routeAbortController && routeAbortController.abort(), 15000);
+    const controller = new AbortController();
+    routeAbortController = controller;
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     $('preview').disabled = true;
     $('clear').hidden = true;
     setStatus('Finding walking route...');
@@ -670,7 +672,7 @@
       start.lng + ',' + start.lat + ';' + destination.lng + ',' + destination.lat +
       '?overview=full&geometries=geojson';
     try {
-      const res = await fetch(url, { signal: routeAbortController.signal });
+      const res = await fetch(url, { signal: controller.signal });
       if (!res.ok) throw new Error('http:' + res.status);
       const data = await res.json();
       if (requestId !== routeRequestId) return;
@@ -713,7 +715,7 @@
     } finally {
       clearTimeout(timeoutId);
       if (requestId === routeRequestId) {
-        routeAbortController = null;
+        if (routeAbortController === controller) routeAbortController = null;
         $('preview').disabled = false;
         $('clear').hidden = !routeLine;
       }
