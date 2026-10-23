@@ -1,0 +1,28 @@
+{
+  "id": "./",
+  "name": "Faculty Finder — OAU Campus Guide",
+  "short_name": "Faculty Finder",
+  "description": "Find faculties, departments, landmarks and walking routes around Obafemi Awolowo University.",
+  "lang": "en",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6f7f2",
+  "theme_color": "#103d31",
+  "categories": ["education", "navigation", "travel"],
+  "icons": [
+    {
+      "src": "./icons/faculty-finder.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/faculty-finder.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
