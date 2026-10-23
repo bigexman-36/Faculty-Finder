@@ -1,0 +1,38 @@
+name: Validate Faculty Finder
+
+on:
+  push:
+    branches:
+      - feat/navigation-quality-fixes
+  pull_request:
+    branches:
+      - main
+      - feat/pwa-install-offline
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check validation script syntax
+        run: node --check scripts/validate-places.mjs
+      - name: Validate place data
+        run: node scripts/validate-places.mjs
+      - name: Parse inline JavaScript
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const html = readFileSync('index.html', 'utf8');
+          const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)];
+          if (!scripts.length) throw new Error('No inline scripts found');
+          scripts.forEach((match, index) => {
+            try { new Function(match[1]); }
+            catch (error) { throw new Error('Inline script ' + (index + 1) + ': ' + error.message); }
+          });
+          console.log('Parsed', scripts.length, 'inline scripts.');
+          NODE
