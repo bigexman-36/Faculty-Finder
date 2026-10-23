@@ -21,6 +21,12 @@ The service worker caches the app shell and attempts to cache the Leaflet map li
 - `service-worker.js` — app-shell and static-asset caching.
 - `icons/faculty-finder.svg` — install/app icon.
 
+## Data quality and validation
+
+- See [`DATA_QUALITY.md`](./DATA_QUALITY.md) for the current coordinate audit and field-verification process.
+- Run `node scripts/validate-places.mjs` to check coordinate ranges, duplicate names, and shared-coordinate warnings.
+- Shared coordinates are reported as warnings, not silently changed; verify them against reliable campus evidence before editing.
+
 ## Attribution
 
 Built on community-contributed campus place data. Map tiles © OpenStreetMap contributors. Please verify place coordinates on the ground before relying on them for navigation.
