@@ -2,11 +2,13 @@
    Only the app shell and static library assets are cached. Map tiles and routing
    responses remain network-only to avoid stale directions and excessive storage. */
 const CACHE_NAME = "faculty-finder-shell-v1";
+const APP_ROOT = new URL("./", self.registration.scope).href;
+const INDEX_URL = new URL("index.html", APP_ROOT).href;
 const APP_SHELL = [
-  "./",
-  "./index.html",
-  "./manifest.webmanifest",
-  "./icons/faculty-finder.svg"
+  APP_ROOT,
+  INDEX_URL,
+  new URL("manifest.webmanifest", APP_ROOT).href,
+  new URL("icons/faculty-finder.svg", APP_ROOT).href
 ];
 const STATIC_ASSETS = [
   "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css",
@@ -49,11 +51,11 @@ self.addEventListener("fetch", event => {
       const cache = await caches.open(CACHE_NAME);
       try {
         const response = await fetch(request);
-        if (response && response.ok) cache.put("./index.html", response.clone());
+        if (response && response.ok) cache.put(INDEX_URL, response.clone());
         return response;
       } catch {
         return (await cache.match(request)) ||
-          (await cache.match("./index.html")) ||
+          (await cache.match(INDEX_URL)) ||
           new Response("Faculty Finder is offline. Reconnect to the internet and try again.", {
             status: 503,
             headers: { "Content-Type": "text/plain; charset=utf-8" }
