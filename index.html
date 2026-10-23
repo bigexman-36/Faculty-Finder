@@ -497,7 +497,12 @@
   const markers = new Map();
   const byName = new Map(places.map(p => [p.name, p]));
   places.forEach(p => {
-    const m = L.circleMarker([p.lat, p.lng], p.approx ? APPROX : BASE);
+    const icon = L.divIcon({
+      className: '',
+      html: '<div class="marker-dot ' + markerClass(p) + (p.approx ? ' approximate' : '') + '" aria-hidden="true">' + markerSymbol(p) + '</div>',
+      iconSize: [30, 30], iconAnchor: [15, 15], tooltipAnchor: [10, 0]
+    });
+    const m = L.marker([p.lat, p.lng], { icon, keyboard: true, title: p.name, riseOnHover: true });
     m.bindTooltip(labelFor(p.name), { permanent: true, direction: 'right', offset: [8, 0], className: 'lbl' });
     m.on('click', () => { if (!pickMode) selectPlace(p.name, false); });
     markers.set(p.name, m);
@@ -538,14 +543,42 @@
       : '<div class="none">No matching places. Try a faculty name, "bank" or "lab".</div>';
     suggestEl.hidden = false;
   }
+  function saveRecent(name) {
+    try {
+      const prior = JSON.parse(localStorage.getItem('facultyFinderRecent') || '[]');
+      const next = [name, ...prior.filter(item => item !== name)].slice(0, 5);
+      localStorage.setItem('facultyFinderRecent', JSON.stringify(next));
+      renderRecent();
+    } catch (e) { /* Storage may be unavailable; search still works. */ }
+  }
+  function renderRecent() {
+    const box = $('recentSearches');
+    if (!box) return;
+    let recent = [];
+    try { recent = JSON.parse(localStorage.getItem('facultyFinderRecent') || '[]'); } catch (e) {}
+    box.innerHTML = recent.length ? recent.map(name => '<button type="button" data-recent="' + name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;') + '">' + name.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</button>').join('') : '';
+    box.hidden = !recent.length;
+    $('popularLabel').hidden = !!recent.length;
+    $('popularPlaces').hidden = !!recent.length;
+  }
   function pickResult(name) {
     suggestEl.hidden = true;
     $('search').value = name;
     query = '';
+    saveRecent(name);
     refreshList();
     selectPlace(name, true);
     $('search').blur();
   }
+  $('recentSearches').addEventListener('click', e => {
+    const b = e.target.closest('[data-recent]');
+    if (b) pickResult(b.dataset.recent);
+  });
+  $('popularPlaces').addEventListener('click', e => {
+    const b = e.target.closest('[data-popular]');
+    if (b) pickResult(b.dataset.popular);
+  });
+  renderRecent();
   $('search').addEventListener('input', e => { query = e.target.value.trim().toLowerCase(); refreshList(); showSuggest(); });
   $('search').addEventListener('focus', showSuggest);
   $('search').addEventListener('keydown', e => {
@@ -642,6 +675,9 @@
   function selectPlace(name, fromList) {
     selected = places.find(p => p.name === name);
     if (!selected) return;
+    saveRecent(selected.name);
+    $('panel').classList.add('mobile-sheet');
+    document.body.classList.add('sheet-open');
     clearRoute(true);
     updatePanel();
     refreshList();
@@ -690,6 +726,20 @@
     refreshList();
   }
 
+  $('mapLocate').addEventListener('click', () => {
+    if (user) { goTo([user.lat, user.lng], Math.max(map.getZoom(), 17)); setStatus('Centered on your current start location.'); }
+    else $('locate').click();
+  });
+  $('mapReset').addEventListener('click', () => {
+    const visible = [...markers.values()].filter(m => layer.hasLayer(m));
+    if (visible.length) map.fitBounds(L.featureGroup(visible).getBounds().pad(0.12), { maxZoom: 16 });
+    else map.setView([7.5205, 4.5245], 15);
+    setStatus('Showing the places currently in your list.');
+  });
+  $('panelClose').addEventListener('click', () => {
+    $('panel').classList.remove('mobile-sheet');
+    document.body.classList.remove('sheet-open');
+  });
   $('locate').addEventListener('click', () => {
     if (!navigator.geolocation) {
       setStatus("Location isn't available here. Use Try demo location or Pick start on map.", true);
