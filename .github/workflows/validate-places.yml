@@ -3,11 +3,10 @@ name: Validate Faculty Finder
 on:
   push:
     branches:
-      - feat/navigation-quality-fixes
+      - main
   pull_request:
     branches:
       - main
-      - feat/pwa-install-offline
 
 jobs:
   validate:
@@ -28,7 +27,7 @@ jobs:
           node --input-type=module <<'NODE'
           import { readFileSync } from 'node:fs';
           const html = readFileSync('index.html', 'utf8');
-          const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)];
+          const scripts = [...html.matchAll(/<script(?![^>]*\\bsrc=)[^>]*>([\\s\\S]*?)<\\/script>/gi)];
           if (!scripts.length) throw new Error('No inline scripts found');
           scripts.forEach((match, index) => {
             try { new Function(match[1]); }
