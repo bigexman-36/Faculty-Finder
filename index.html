@@ -168,7 +168,7 @@
       <div class="panel" id="panel" hidden>
         <strong id="p-name">Destination</strong>
         <span id="p-sub"></span>
-        <div class="warn" id="p-warn" hidden>Approximate pin: this location has not been verified yet, so it may be off by a building or more.</div>
+        <div class="warn" id="p-warn" hidden></div>
         <div class="actions">
           <button class="btn route" id="preview">Preview walking route</button>
           <a class="btn" id="gmaps" target="_blank" rel="noopener" title="Opens Google Maps in a new tab with walking directions">Walking directions in Google Maps &#8599;</a>
@@ -297,6 +297,7 @@
   // ---- State ----
   let activeCat = 'All', query = '', selected = null, user = null;
   let userMarker = null, watchId = null, routeLine = null, pickMode = false, routeInfo = null, trackTimer = null;
+  let routeRequestId = 0, routeAbortController = null;
 
   // ---- Map ----
   const mapEl = $('map');
@@ -466,7 +467,12 @@
       sub += ' \u00b7 Set a start point to see distance and routes';
     }
     $('p-sub').textContent = sub;
-    $('p-warn').hidden = !selected.approx;
+    const coordinatePeers = places.filter(p => p.name !== selected.name && Math.abs(p.lat - selected.lat) < 0.0000001 && Math.abs(p.lng - selected.lng) < 0.0000001);
+    const warnings = [];
+    if (selected.approx) warnings.push('Approximate pin: this location has not been verified on the ground and may be off by a building or more.');
+    if (coordinatePeers.length) warnings.push('Pin-data issue: this exact coordinate is also assigned to ' + coordinatePeers.map(p => p.name).join(', ') + '. These locations may overlap on the map; their coordinates need verification.');
+    $('p-warn').textContent = warnings.join(' ');
+    $('p-warn').hidden = warnings.length === 0;
     $('gmaps').href = 'https://www.google.com/maps/dir/?api=1&destination=' + selected.lat + ',' + selected.lng + '&travelmode=walking';
     $('report').href = reportUrl(selected);
   }
@@ -484,8 +490,8 @@
   }
 
   // ---- Location ----
-  function setUser(lat, lng, pan, msg, label) {
-    user = { lat, lng };
+  function setUser(lat, lng, pan, msg, label, accuracyMeters) {
+    user = { lat, lng, accuracy: Number.isFinite(accuracyMeters) ? accuracyMeters : null };
     if (!userMarker) {
       userMarker = L.circleMarker([lat, lng], { radius: 10, weight: 3, color: '#fff', fillColor: '#2E7D5B', fillOpacity: 1 })
         .addTo(map).bindTooltip(label || 'You are here', { permanent: true, direction: 'top', offset: [0, -10], className: 'lbl' });
@@ -497,7 +503,7 @@
     if (nearest > 3000) {
       setStatus("You're about " + fmt(nearest) + " from the nearest campus place, so the map stays on campus. Try the demo location to see how it works.", true);
     } else {
-      if (msg) setStatus(msg);
+      if (msg) setStatus(msg + (Number.isFinite(accuracyMeters) ? ' GPS accuracy: about ±' + Math.round(accuracyMeters) + ' m.' : ''));
       if (pan) goTo([lat, lng], 17);
     }
     updatePanel();
@@ -513,7 +519,7 @@
     stopWatch();
     let first = true;
     watchId = navigator.geolocation.watchPosition(
-      pos => { setUser(pos.coords.latitude, pos.coords.longitude, first, first ? 'Location found.' : null); first = false; },
+      pos => { setUser(pos.coords.latitude, pos.coords.longitude, first, first ? 'Location found.' : null, 'You are here', pos.coords.accuracy); first = false; },
       err => setStatus(err.code === 1
         ? 'Location is blocked. You can still use Try demo location or Pick start on map.'
         : "Couldn't get your location (" + err.message + ").", true),
@@ -636,6 +642,8 @@
 
   // ---- Routes ----
   function clearRoute(silent) {
+    routeRequestId++;
+    if (routeAbortController) { routeAbortController.abort(); routeAbortController = null; }
     if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
     routeInfo = null;
     $('clear').hidden = true;
@@ -650,16 +658,29 @@
     if (!selected) { setStatus('Pick a place first.', true); return; }
     if (!user) { setStatus('Set a start point first: Use my location, Try demo location, or Pick start on map.', true); return; }
     clearRoute(true);
+    const requestId = routeRequestId;
+    const start = { lat: user.lat, lng: user.lng };
+    const destination = { ...selected };
+    routeAbortController = new AbortController();
+    const timeoutId = setTimeout(() => routeAbortController && routeAbortController.abort(), 15000);
     $('preview').disabled = true;
+    $('clear').hidden = true;
     setStatus('Finding walking route...');
     const url = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/' +
-      user.lng + ',' + user.lat + ';' + selected.lng + ',' + selected.lat +
+      start.lng + ',' + start.lat + ';' + destination.lng + ',' + destination.lat +
       '?overview=full&geometries=geojson';
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: routeAbortController.signal });
+      if (!res.ok) throw new Error('http:' + res.status);
       const data = await res.json();
-      if (data.code !== 'Ok') throw new Error(data.code);
+      if (requestId !== routeRequestId) return;
+      if (selected?.name !== destination.name || !user || haversine(start.lat, start.lng, user.lat, user.lng) > 25) {
+        setStatus('Your start point changed while the route was loading. Preview the route again.', true);
+        return;
+      }
+      if (data.code !== 'Ok' || !Array.isArray(data.routes) || !data.routes[0]) throw new Error(data.code || 'no-route');
       const r = data.routes[0];
+      if (!r.geometry || !Array.isArray(r.geometry.coordinates) || r.geometry.coordinates.length < 2 || !Number.isFinite(r.distance) || !Number.isFinite(r.duration)) throw new Error('invalid-route');
       const straight = haversine(user.lat, user.lng, selected.lat, selected.lng);
       const longRoute = straight > 30 && r.distance > straight * 2.2;
       const coords = r.geometry.coordinates;
@@ -672,19 +693,30 @@
       map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
       routeInfo = { dist: r.distance, min: Math.max(1, Math.round(r.duration / 60)) };
       updatePanel();
-      setStatus('Directions active: ' + fmt(r.distance) + ', about ' + routeInfo.min + ' min on foot to ' + selected.name + '. Dashed parts are off-path stretches.'
+      setStatus('Directions active: ' + fmt(r.distance) + ', about ' + routeInfo.min + ' min on foot to ' + destination.name + '. Dashed parts are off-path stretches.'
         + (longRoute ? ' Heads up: this is much longer than the straight line, so it may take a detour. Check "Walking directions in Google Maps" if it looks wrong.' : ''));
     } catch (err) {
-      routeLine = L.polyline([[user.lat, user.lng], [selected.lat, selected.lng]],
-        { color: '#1a73e8', weight: 4, dashArray: '8 8' }).addTo(map);
-      map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
-      const detour = String(err && err.message).startsWith('detour:');
-      setStatus(detour
-        ? 'The route found was ' + fmt(parseInt(String(err.message).slice(7), 10)) + ', far longer than the straight line, so OpenStreetMap probably lacks paths here. The dashed line is a straight line; use "Walking directions in Google Maps" for a reliable route.'
-        : "Couldn't load a walking route, so the dashed line is just a straight line, not a real path.", !detour);
+      if (requestId !== routeRequestId) return;
+      const changed = selected?.name !== destination.name || !user || haversine(start.lat, start.lng, user.lat, user.lng) > 25;
+      if (changed) {
+        setStatus('Your start point or destination changed while loading. Preview the route again.', true);
+        return;
+      }
+      // Never draw a fake straight line as if it were a walking route; show an explicit error instead.
+      const timedOut = err && err.name === 'AbortError';
+      const message = String(err && err.message || '');
+      setStatus(timedOut
+        ? 'The route request timed out or was cancelled. Check your connection and try again, or use Google Maps walking directions.'
+        : message.startsWith('http:')
+          ? 'The routing service returned an error (' + message.slice(5) + '). Try again later or use Google Maps walking directions.'
+          : 'Could not find a valid walking route. Check your connection or use Google Maps walking directions.', true);
     } finally {
-      $('preview').disabled = false;
-      $('clear').hidden = false;
+      clearTimeout(timeoutId);
+      if (requestId === routeRequestId) {
+        routeAbortController = null;
+        $('preview').disabled = false;
+        $('clear').hidden = !routeLine;
+      }
     }
   });
 
