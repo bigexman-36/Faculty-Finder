@@ -106,6 +106,8 @@
   .panel .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
   a.btn { text-decoration: none; display: inline-block; }
   .warn { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: #fff4d6; color: #7a5200; font-size: 12.5px; line-height: 1.4; }
+  .peer-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .peer-buttons button { border: 1px solid #d9bf75; border-radius: 8px; background: #fff; color: #5d4710; padding: 6px 9px; font-size: 12px; }
   .toolbar select.btn { max-width: 100%; min-width: 0; }
 
   .howto { margin: 12px 0 0; padding: 12px 14px; border-radius: 12px; background: #fbfcfa; border: 1px dashed #cfd9cf;
@@ -132,6 +134,113 @@
     .sidebar { order: 2; border-left: none; border-top: 1px solid var(--line); }
     .list { max-height: none; }
   }
+
+  /* UI polish: clearer hierarchy, calmer surfaces, and mobile-first controls */
+  .topbar { box-shadow: 0 4px 18px rgba(5, 28, 20, .16); }
+  .brand-mark { box-shadow: inset 0 0 0 1px rgba(10,43,35,.08); }
+  main { padding-top: clamp(22px, 4vw, 38px); }
+  h1 { max-width: 760px; }
+  .lede { font-size: 15px; }
+  .finder .search { border-radius: 16px; transition: border-color .18s ease, box-shadow .18s ease; }
+  .finder .search:focus { border-color: var(--green); box-shadow: 0 0 0 4px rgba(16,61,49,.12), 0 8px 24px rgba(18,42,31,.08); }
+  .workspace { border-color: #dfe6dd; box-shadow: 0 18px 48px rgba(18,42,31,.09); }
+  .mapcol { background: linear-gradient(180deg, #fff 0%, #fbfcf9 100%); }
+  #map { overflow: hidden; box-shadow: 0 3px 12px rgba(18,42,31,.06); }
+  .toolbar { gap: 7px; }
+  .btn { min-height: 40px; transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease; }
+  .btn:not(:disabled):active, .chip:active, .place:active { transform: translateY(1px); }
+  .btn.primary { box-shadow: 0 3px 8px rgba(16,61,49,.15); }
+  .btn.route { box-shadow: 0 3px 8px rgba(26,115,232,.16); }
+  .chip { padding: 7px 12px; }
+  .chip:focus-visible, .btn:focus-visible, .place:focus-visible { outline-offset: 2px; }
+  .list { scrollbar-width: thin; scrollbar-color: #c9d7cb transparent; }
+  .place { border-color: #edf1eb; transition: background-color .15s ease, border-color .15s ease, transform .15s ease; }
+  .place.sel { box-shadow: inset 3px 0 0 var(--green); }
+  .pi { font-size: 13px; }
+  .panel { background: linear-gradient(135deg, #eef5ee, #e5efe7); border-color: #d6e5d8; box-shadow: 0 4px 14px rgba(18,42,31,.04); }
+  .panel .actions .btn { flex: 0 0 auto; }
+  .howto { background: #f8faf6; border-style: solid; border-color: #e4ebe1; }
+  .safety { line-height: 1.55; }
+  .network-notice { box-shadow: 0 3px 10px rgba(93,71,16,.05); }
+
+  @media (min-width: 851px) {
+    .sidebar { background: #fcfdfb; }
+    .list { padding-right: 2px; }
+    .mapcol { padding: 18px; }
+    #map { height: min(66vh, 680px); min-height: 430px; }
+  }
+  @media (max-width: 850px) {
+    main { padding: 20px 16px 30px; }
+    .workspace { border-radius: 17px; }
+    .mapcol { padding: 12px; }
+    .sidebar { padding: 14px 12px; }
+    .toolbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .toolbar .btn { width: 100%; min-width: 0; padding: 9px 8px; font-size: 12.5px; }
+    .toolbar #locate { grid-column: 1 / -1; font-size: 13.5px; }
+    .toolbar #startFrom { grid-column: 1 / -1; }
+    #map { height: 48vh; min-height: 300px; max-height: 560px; border-radius: 12px; }
+    .panel { padding: 13px; }
+    .panel .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .panel .actions .btn { width: 100%; min-width: 0; text-align: center; padding: 10px 8px; font-size: 12px; }
+    .panel .actions #preview, .panel .actions #gmaps { grid-column: 1 / -1; }
+    .howto { font-size: 12.5px; }
+  }
+  @media (max-width: 420px) {
+    .topbar { padding-left: 16px; padding-right: 16px; gap: 8px; }
+    .brand-mark { width: 34px; height: 34px; border-radius: 10px; }
+    .brand { gap: 9px; }
+    main { padding-left: 12px; padding-right: 12px; }
+    h1 { font-size: 28px; }
+    .lede { font-size: 14px; }
+    .finder { margin-bottom: 12px; }
+    .finder .search { height: 50px; padding: 0 14px; }
+    #map { min-height: 280px; }
+    .status { font-size: 12px; line-height: 1.45; }
+    .chips { margin-right: -2px; }
+    .listhead { margin-top: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  }
+
+
+  /* Map UI refresh: map-first controls, destination sheet, and category-aware markers */
+  .map-wrap { position: relative; }
+  .map-float-controls { position: absolute; z-index: 700; top: 12px; right: 12px; display: grid; gap: 8px; }
+  .map-fab { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid #dfe6df;
+    border-radius: 14px; background: rgba(255,255,255,.97); color: var(--green); font-size: 20px;
+    box-shadow: 0 4px 14px rgba(18,42,31,.18); }
+  .map-fab span { font-size: 10px; font-weight: 800; }
+  .map-fab:hover { background: var(--green-soft); }
+  .panel { position: relative; }
+  .panel-topline { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .panel-kicker { color: var(--green) !important; font-size: 10px !important; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+  .panel-close { display: none; border: 1px solid #d6e5d8; background: #fff; color: var(--green); border-radius: 9px; padding: 6px 10px; font-size: 12px; }
+  .marker-dot { width: 30px; height: 30px; display: grid; place-items: center; border: 2px solid #fff; border-radius: 11px;
+    color: #fff; font-size: 12px; font-weight: 900; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  .marker-dot.faculty { background: #176b4b; }
+  .marker-dot.hostel { background: #7250a4; }
+  .marker-dot.food { background: #c46b1a; }
+  .marker-dot.bank { background: #176db2; }
+  .marker-dot.sports { background: #bd3c43; }
+  .marker-dot.service { background: #596b76; }
+  .marker-dot.selected { outline: 3px solid #d8f08a; outline-offset: 1px; transform: scale(1.08); }
+  .recent-searches { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+  .recent-searches button { border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; background: #fff; color: var(--muted); font-size: 12px; }
+  .popular-label { margin: 10px 0 0; color: var(--muted); font-size: 11px; font-weight: 750; text-transform: uppercase; letter-spacing: .07em; }
+  .suggest-empty { padding: 12px; color: var(--muted); font-size: 13px; }
+  @media (max-width: 850px) {
+    .map-float-controls { top: 10px; right: 10px; }
+    .map-fab { width: 42px; height: 42px; border-radius: 13px; }
+    .panel.mobile-sheet { position: fixed; z-index: 1200; left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom, 0px));
+      max-height: 56vh; overflow-y: auto; margin: 0; padding: 16px; border-radius: 20px;
+      background: rgba(247,250,246,.98); box-shadow: 0 14px 50px rgba(8,28,19,.28); backdrop-filter: blur(12px); }
+    .panel.mobile-sheet::before { content: ''; display: block; width: 38px; height: 4px; border-radius: 99px; background: #c6d5c7; margin: -5px auto 12px; }
+    .panel-close { display: inline-block; }
+    .panel .actions { padding-bottom: 2px; }
+    body.sheet-open { overflow: hidden; }
+  }
+
 </style>
 </head>
 <body>
@@ -148,6 +257,14 @@
   <div class="finder">
     <input class="search" id="search" type="search" autocomplete="off" aria-label="Search for a place" placeholder="Where are you going? e.g. Faculty of Technology, bank, museum">
     <div class="suggest" id="suggest" hidden></div>
+    <div class="recent-searches" id="recentSearches" hidden></div>
+    <p class="popular-label" id="popularLabel">Popular places</p>
+    <div class="recent-searches" id="popularPlaces">
+      <button type="button" data-popular="Faculty of Technology">Technology</button>
+      <button type="button" data-popular="Hezekiah Oluwasanmi Library">Library</button>
+      <button type="button" data-popular="Student Union">Student Union</button>
+      <button type="button" data-popular="Main University Gate">Main Gate</button>
+    </div>
   </div>
 
   <div class="workspace">
@@ -163,12 +280,18 @@
       </div>
       <div class="status" id="status" aria-live="polite"></div>
 
-      <div id="map"></div>
+      <div class="map-wrap">
+        <div id="map"></div>
+        <div class="map-float-controls" aria-label="Map controls">
+          <button class="map-fab" id="mapLocate" type="button" aria-label="Center map on my location" title="Center on my location">◎</button>
+          <button class="map-fab" id="mapReset" type="button" aria-label="Show all places" title="Show all places"><span>ALL</span></button>
+        </div>
+      </div>
 
       <div class="panel" id="panel" hidden>
-        <strong id="p-name">Destination</strong>
-        <span id="p-sub"></span>
-        <div class="warn" id="p-warn" hidden>Approximate pin: this location has not been verified yet, so it may be off by a building or more.</div>
+        <div class="panel-topline"><div><span class="panel-kicker">Selected destination</span><strong id="p-name">Destination</strong><span id="p-sub"></span></div><button class="panel-close" id="panelClose" type="button">Close</button></div>
+        <div class="warn" id="p-warn" hidden></div>
+        <div class="warn" id="p-peers" hidden><strong>Other places at this pin</strong><div id="p-peer-buttons" class="peer-buttons"></div></div>
         <div class="actions">
           <button class="btn route" id="preview">Preview walking route</button>
           <a class="btn" id="gmaps" target="_blank" rel="noopener" title="Opens Google Maps in a new tab with walking directions">Walking directions in Google Maps &#8599;</a>
@@ -280,14 +403,38 @@
       d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
     return d[m][n];
   }
-  function haystack(p) { return (p.name + ' ' + p.category + ' ' + (p.aliases || []).join(' ')).toLowerCase(); }
+  function normalizeSearch(value) {
+    return String(value || '').toLowerCase().normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  function markerClass(p) {
+    const c = normalizeSearch(p.category);
+    if (c.includes('faculty')) return 'faculty';
+    if (c.includes('hostel')) return 'hostel';
+    if (c.includes('food')) return 'food';
+    if (c.includes('bank')) return 'bank';
+    if (c.includes('sport')) return 'sports';
+    return 'service';
+  }
+  function markerSymbol(p) {
+    const c = markerClass(p);
+    return c === 'faculty' ? 'F' : c === 'hostel' ? 'H' : c === 'food' ? 'E' : c === 'bank' ? '
+    return normalizeSearch(p.name + ' ' + p.category + ' ' + (p.aliases || []).join(' '));
+  }
   function matchPlace(p, q) {
-    if (!q) return true;
+    const normalizedQuery = normalizeSearch(q);
+    if (!normalizedQuery) return true;
     const h = haystack(p);
-    if (h.includes(q)) return true;
-    if (q.length < 4) return false;
-    const tol = q.length >= 6 ? 2 : 1;
-    return h.split(/[^a-z0-9]+/).some(t => t.length >= 3 && (lev(t, q) <= tol || lev(t.slice(0, q.length), q) <= tol));
+    if (h.includes(normalizedQuery)) return true;
+    const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
+    const haystackWords = h.split(/\s+/).filter(Boolean);
+    return queryWords.every(word => {
+      if (haystackWords.some(token => token.startsWith(word))) return true;
+      if (word.length < 4) return false;
+      const tolerance = word.length >= 7 ? 2 : 1;
+      return haystackWords.some(token => token.length >= 3 &&
+        (lev(token, word) <= tolerance || (token.length >= word.length && lev(token.slice(0, word.length), word) <= tolerance)));
+    });
   }
   function setStatus(msg, isErr) {
     $('status').textContent = msg || '';
@@ -296,7 +443,8 @@
 
   // ---- State ----
   let activeCat = 'All', query = '', selected = null, user = null;
-  let userMarker = null, watchId = null, routeLine = null, pickMode = false, routeInfo = null, trackTimer = null;
+  let userMarker = null, userAccuracyCircle = null, watchId = null, routeLine = null, pickMode = false, routeInfo = null, trackTimer = null;
+  let routeRequestId = 0, routeAbortController = null;
 
   // ---- Map ----
   const mapEl = $('map');
@@ -349,7 +497,12 @@
   const markers = new Map();
   const byName = new Map(places.map(p => [p.name, p]));
   places.forEach(p => {
-    const m = L.circleMarker([p.lat, p.lng], p.approx ? APPROX : BASE);
+    const icon = L.divIcon({
+      className: '',
+      html: '<div class="marker-dot ' + markerClass(p) + (p.approx ? ' approximate' : '') + '" aria-hidden="true">' + markerSymbol(p) + '</div>',
+      iconSize: [30, 30], iconAnchor: [15, 15], tooltipAnchor: [10, 0]
+    });
+    const m = L.marker([p.lat, p.lng], { icon, keyboard: true, title: p.name, riseOnHover: true });
     m.bindTooltip(labelFor(p.name), { permanent: true, direction: 'right', offset: [8, 0], className: 'lbl' });
     m.on('click', () => { if (!pickMode) selectPlace(p.name, false); });
     markers.set(p.name, m);
@@ -390,14 +543,42 @@
       : '<div class="none">No matching places. Try a faculty name, "bank" or "lab".</div>';
     suggestEl.hidden = false;
   }
+  function saveRecent(name) {
+    try {
+      const prior = JSON.parse(localStorage.getItem('facultyFinderRecent') || '[]');
+      const next = [name, ...prior.filter(item => item !== name)].slice(0, 5);
+      localStorage.setItem('facultyFinderRecent', JSON.stringify(next));
+      renderRecent();
+    } catch (e) { /* Storage may be unavailable; search still works. */ }
+  }
+  function renderRecent() {
+    const box = $('recentSearches');
+    if (!box) return;
+    let recent = [];
+    try { recent = JSON.parse(localStorage.getItem('facultyFinderRecent') || '[]'); } catch (e) {}
+    box.innerHTML = recent.length ? recent.map(name => '<button type="button" data-recent="' + name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;') + '">' + name.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</button>').join('') : '';
+    box.hidden = !recent.length;
+    $('popularLabel').hidden = !!recent.length;
+    $('popularPlaces').hidden = !!recent.length;
+  }
   function pickResult(name) {
     suggestEl.hidden = true;
     $('search').value = name;
     query = '';
+    saveRecent(name);
     refreshList();
     selectPlace(name, true);
     $('search').blur();
   }
+  $('recentSearches').addEventListener('click', e => {
+    const b = e.target.closest('[data-recent]');
+    if (b) pickResult(b.dataset.recent);
+  });
+  $('popularPlaces').addEventListener('click', e => {
+    const b = e.target.closest('[data-popular]');
+    if (b) pickResult(b.dataset.popular);
+  });
+  renderRecent();
   $('search').addEventListener('input', e => { query = e.target.value.trim().toLowerCase(); refreshList(); showSuggest(); });
   $('search').addEventListener('focus', showSuggest);
   $('search').addEventListener('keydown', e => {
@@ -433,7 +614,16 @@
 
     layer.clearLayers();
     vis.forEach(p => layer.addLayer(markers.get(p.name)));
-    markers.forEach((m, name) => m.setStyle(selected && selected.name === name ? SEL : (byName.get(name).approx ? APPROX : BASE)));
+    markers.forEach((m, name) => {
+      const p = byName.get(name);
+      const isSelected = !!(selected && selected.name === name);
+      const icon = L.divIcon({
+        className: '',
+        html: '<div class="marker-dot ' + markerClass(p) + (p.approx ? ' approximate' : '') + (isSelected ? ' selected' : '') + '" aria-hidden="true">' + markerSymbol(p) + '</div>',
+        iconSize: [30, 30], iconAnchor: [15, 15], tooltipAnchor: [10, 0]
+      });
+      m.setIcon(icon);
+    });
 
     $('count').textContent = vis.length + (vis.length === 1 ? ' place' : ' places');
     $('list').innerHTML = vis.length
@@ -466,7 +656,27 @@
       sub += ' \u00b7 Set a start point to see distance and routes';
     }
     $('p-sub').textContent = sub;
-    $('p-warn').hidden = !selected.approx;
+    const coordinatePeers = places.filter(p => p.name !== selected.name && Math.abs(p.lat - selected.lat) < 0.0000001 && Math.abs(p.lng - selected.lng) < 0.0000001);
+    const warnings = [];
+    if (selected.approx) warnings.push('Approximate pin: this location has not been verified on the ground and may be off by a building or more.');
+    if (coordinatePeers.length) warnings.push('Pin-data issue: this exact coordinate is also assigned to ' + coordinatePeers.map(p => p.name).join(', ') + '. These locations may overlap on the map; their coordinates need verification.');
+    $('p-warn').textContent = warnings.join(' ');
+    $('p-warn').hidden = warnings.length === 0;
+    const peerBox = $('p-peers');
+    const peerButtons = $('p-peer-buttons');
+    peerButtons.replaceChildren();
+    if (coordinatePeers.length) {
+      coordinatePeers.forEach(peer => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = 'Select ' + peer.name;
+        button.addEventListener('click', () => selectPlace(peer.name, false));
+        peerButtons.appendChild(button);
+      });
+      peerBox.hidden = false;
+    } else {
+      peerBox.hidden = true;
+    }
     $('gmaps').href = 'https://www.google.com/maps/dir/?api=1&destination=' + selected.lat + ',' + selected.lng + '&travelmode=walking';
     $('report').href = reportUrl(selected);
   }
@@ -474,6 +684,9 @@
   function selectPlace(name, fromList) {
     selected = places.find(p => p.name === name);
     if (!selected) return;
+    saveRecent(selected.name);
+    $('panel').classList.add('mobile-sheet');
+    document.body.classList.add('sheet-open');
     clearRoute(true);
     updatePanel();
     refreshList();
@@ -484,8 +697,8 @@
   }
 
   // ---- Location ----
-  function setUser(lat, lng, pan, msg, label) {
-    user = { lat, lng };
+  function setUser(lat, lng, pan, msg, label, accuracyMeters) {
+    user = { lat, lng, accuracy: Number.isFinite(accuracyMeters) ? accuracyMeters : null };
     if (!userMarker) {
       userMarker = L.circleMarker([lat, lng], { radius: 10, weight: 3, color: '#fff', fillColor: '#2E7D5B', fillOpacity: 1 })
         .addTo(map).bindTooltip(label || 'You are here', { permanent: true, direction: 'top', offset: [0, -10], className: 'lbl' });
@@ -493,17 +706,49 @@
       userMarker.setLatLng([lat, lng]);
       userMarker.setTooltipContent(label || 'You are here');
     }
+    if (Number.isFinite(accuracyMeters) && accuracyMeters >= 0) {
+      if (!userAccuracyCircle) {
+        userAccuracyCircle = L.circle([lat, lng], { radius: accuracyMeters, color: '#2E7D5B', weight: 1, fillColor: '#2E7D5B', fillOpacity: 0.10, interactive: false }).addTo(map);
+      } else {
+        userAccuracyCircle.setLatLng([lat, lng]);
+        userAccuracyCircle.setRadius(accuracyMeters);
+      }
+    } else if (userAccuracyCircle) {
+      map.removeLayer(userAccuracyCircle);
+      userAccuracyCircle = null;
+    }
+    if (userMarker && userMarker.bringToFront) userMarker.bringToFront();
     const nearest = Math.min(...places.map(p => haversine(lat, lng, p.lat, p.lng)));
     if (nearest > 3000) {
       setStatus("You're about " + fmt(nearest) + " from the nearest campus place, so the map stays on campus. Try the demo location to see how it works.", true);
     } else {
-      if (msg) setStatus(msg);
+      if (msg || (Number.isFinite(accuracyMeters) && accuracyMeters > 100)) {
+        const accuracyText = Number.isFinite(accuracyMeters) ? ' GPS accuracy: about ±' + Math.round(accuracyMeters) + ' m.' : '';
+        const lowAccuracyText = Number.isFinite(accuracyMeters) && accuracyMeters > 100
+          ? ' Your GPS position is imprecise; wait for a better fix or set your start point on the map.'
+          : '';
+        setStatus((msg || 'GPS position updated.') + accuracyText + lowAccuracyText, !!lowAccuracyText);
+      }
       if (pan) goTo([lat, lng], 17);
     }
     updatePanel();
     refreshList();
   }
 
+  $('mapLocate').addEventListener('click', () => {
+    if (user) { goTo([user.lat, user.lng], Math.max(map.getZoom(), 17)); setStatus('Centered on your current start location.'); }
+    else $('locate').click();
+  });
+  $('mapReset').addEventListener('click', () => {
+    const visible = [...markers.values()].filter(m => layer.hasLayer(m));
+    if (visible.length) map.fitBounds(L.featureGroup(visible).getBounds().pad(0.12), { maxZoom: 16 });
+    else map.setView([7.5205, 4.5245], 15);
+    setStatus('Showing the places currently in your list.');
+  });
+  $('panelClose').addEventListener('click', () => {
+    $('panel').classList.remove('mobile-sheet');
+    document.body.classList.remove('sheet-open');
+  });
   $('locate').addEventListener('click', () => {
     if (!navigator.geolocation) {
       setStatus("Location isn't available here. Use Try demo location or Pick start on map.", true);
@@ -513,7 +758,7 @@
     stopWatch();
     let first = true;
     watchId = navigator.geolocation.watchPosition(
-      pos => { setUser(pos.coords.latitude, pos.coords.longitude, first, first ? 'Location found.' : null); first = false; },
+      pos => { setUser(pos.coords.latitude, pos.coords.longitude, first, first ? 'Location found.' : null, 'You are here', pos.coords.accuracy); first = false; },
       err => setStatus(err.code === 1
         ? 'Location is blocked. You can still use Try demo location or Pick start on map.'
         : "Couldn't get your location (" + err.message + ").", true),
@@ -636,6 +881,9 @@
 
   // ---- Routes ----
   function clearRoute(silent) {
+    routeRequestId++;
+    if (routeAbortController) { routeAbortController.abort(); routeAbortController = null; }
+    $('preview').disabled = false;
     if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
     routeInfo = null;
     $('clear').hidden = true;
@@ -650,17 +898,40 @@
     if (!selected) { setStatus('Pick a place first.', true); return; }
     if (!user) { setStatus('Set a start point first: Use my location, Try demo location, or Pick start on map.', true); return; }
     clearRoute(true);
+    const requestId = routeRequestId;
+    const start = { lat: user.lat, lng: user.lng };
+    const destination = { ...selected };
+    const controller = new AbortController();
+    routeAbortController = controller;
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     $('preview').disabled = true;
+    $('clear').hidden = true;
     setStatus('Finding walking route...');
     const url = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/' +
-      user.lng + ',' + user.lat + ';' + selected.lng + ',' + selected.lat +
+      start.lng + ',' + start.lat + ';' + destination.lng + ',' + destination.lat +
       '?overview=full&geometries=geojson';
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: controller.signal });
+      if (!res.ok) throw new Error('http:' + res.status);
       const data = await res.json();
-      if (data.code !== 'Ok') throw new Error(data.code);
+      if (requestId !== routeRequestId) return;
+      if (selected?.name !== destination.name || !user || haversine(start.lat, start.lng, user.lat, user.lng) > 25) {
+        setStatus('Your start point changed while the route was loading. Preview the route again.', true);
+        return;
+      }
+      if (data.code !== 'Ok' || !Array.isArray(data.routes) || !data.routes[0]) throw new Error(data.code || 'no-route');
       const r = data.routes[0];
-      const straight = haversine(user.lat, user.lng, selected.lat, selected.lng);
+      if (!r.geometry || !Array.isArray(r.geometry.coordinates) || r.geometry.coordinates.length < 2 || !Number.isFinite(r.distance) || r.distance < 0 || !Number.isFinite(r.duration) || r.duration < 0) throw new Error('invalid-route');
+      const validCoordinate = pair => Array.isArray(pair) && pair.length >= 2 &&
+        Number.isFinite(pair[0]) && pair[0] >= -180 && pair[0] <= 180 &&
+        Number.isFinite(pair[1]) && pair[1] >= -90 && pair[1] <= 90;
+      if (!r.geometry.coordinates.every(validCoordinate)) throw new Error('invalid-route-coordinates');
+      const firstPoint = r.geometry.coordinates[0], lastPoint = r.geometry.coordinates[r.geometry.coordinates.length - 1];
+      if (haversine(start.lat, start.lng, firstPoint[1], firstPoint[0]) > 500 ||
+          haversine(destination.lat, destination.lng, lastPoint[1], lastPoint[0]) > 500) {
+        throw new Error('route-endpoints-mismatch');
+      }
+      const straight = haversine(start.lat, start.lng, destination.lat, destination.lng);
       const longRoute = straight > 30 && r.distance > straight * 2.2;
       const coords = r.geometry.coordinates;
       const first = coords[0], last = coords[coords.length - 1];
@@ -672,19 +943,30 @@
       map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
       routeInfo = { dist: r.distance, min: Math.max(1, Math.round(r.duration / 60)) };
       updatePanel();
-      setStatus('Directions active: ' + fmt(r.distance) + ', about ' + routeInfo.min + ' min on foot to ' + selected.name + '. Dashed parts are off-path stretches.'
+      setStatus('Directions active: ' + fmt(r.distance) + ', about ' + routeInfo.min + ' min on foot to ' + destination.name + '. Dashed parts are off-path stretches.'
         + (longRoute ? ' Heads up: this is much longer than the straight line, so it may take a detour. Check "Walking directions in Google Maps" if it looks wrong.' : ''));
     } catch (err) {
-      routeLine = L.polyline([[user.lat, user.lng], [selected.lat, selected.lng]],
-        { color: '#1a73e8', weight: 4, dashArray: '8 8' }).addTo(map);
-      map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
-      const detour = String(err && err.message).startsWith('detour:');
-      setStatus(detour
-        ? 'The route found was ' + fmt(parseInt(String(err.message).slice(7), 10)) + ', far longer than the straight line, so OpenStreetMap probably lacks paths here. The dashed line is a straight line; use "Walking directions in Google Maps" for a reliable route.'
-        : "Couldn't load a walking route, so the dashed line is just a straight line, not a real path.", !detour);
+      if (requestId !== routeRequestId) return;
+      const changed = selected?.name !== destination.name || !user || haversine(start.lat, start.lng, user.lat, user.lng) > 25;
+      if (changed) {
+        setStatus('Your start point or destination changed while loading. Preview the route again.', true);
+        return;
+      }
+      // Never draw a fake straight line as if it were a walking route; show an explicit error instead.
+      const timedOut = err && err.name === 'AbortError';
+      const message = String(err && err.message || '');
+      setStatus(timedOut
+        ? 'The route request timed out or was cancelled. Check your connection and try again, or use Google Maps walking directions.'
+        : message.startsWith('http:')
+          ? 'The routing service returned an error (' + message.slice(5) + '). Try again later or use Google Maps walking directions.'
+          : 'Could not find a valid walking route. Check your connection or use Google Maps walking directions.', true);
     } finally {
-      $('preview').disabled = false;
-      $('clear').hidden = false;
+      clearTimeout(timeoutId);
+      if (requestId === routeRequestId) {
+        if (routeAbortController === controller) routeAbortController = null;
+        $('preview').disabled = false;
+        $('clear').hidden = !routeLine;
+      }
     }
   });
 
