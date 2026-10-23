@@ -12,7 +12,7 @@
 <link rel="icon" type="image/svg+xml" href="./icons/faculty-finder.svg">
 <link rel="apple-touch-icon" href="./icons/faculty-finder.svg">
 <title>Faculty Finder — OAU Campus Guide</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" onerror="this.onerror=null;this.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';">
 <style>
   :root {
     --green: #103d31; --green-dark: #0a2b23; --green-soft: #e8f1eb; --lime: #d8f08a;
@@ -318,8 +318,8 @@
   </div>
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js" onerror="this.onerror=null;this.src='https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js';"></script>
 <script>
   const places = [
     { name: "Faculty of Technology", category: "Faculty", aliases: ["tech", "engineering", "eng"], lat: 7.51786, lng: 4.52831 },
