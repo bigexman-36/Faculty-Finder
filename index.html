@@ -106,6 +106,8 @@
   .panel .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
   a.btn { text-decoration: none; display: inline-block; }
   .warn { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: #fff4d6; color: #7a5200; font-size: 12.5px; line-height: 1.4; }
+  .peer-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .peer-buttons button { border: 1px solid #d9bf75; border-radius: 8px; background: #fff; color: #5d4710; padding: 6px 9px; font-size: 12px; }
   .toolbar select.btn { max-width: 100%; min-width: 0; }
 
   .howto { margin: 12px 0 0; padding: 12px 14px; border-radius: 12px; background: #fbfcfa; border: 1px dashed #cfd9cf;
@@ -169,6 +171,7 @@
         <strong id="p-name">Destination</strong>
         <span id="p-sub"></span>
         <div class="warn" id="p-warn" hidden></div>
+        <div class="warn" id="p-peers" hidden><strong>Other places at this pin</strong><div id="p-peer-buttons" class="peer-buttons"></div></div>
         <div class="actions">
           <button class="btn route" id="preview">Preview walking route</button>
           <a class="btn" id="gmaps" target="_blank" rel="noopener" title="Opens Google Maps in a new tab with walking directions">Walking directions in Google Maps &#8599;</a>
@@ -280,14 +283,27 @@
       d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
     return d[m][n];
   }
-  function haystack(p) { return (p.name + ' ' + p.category + ' ' + (p.aliases || []).join(' ')).toLowerCase(); }
+  function normalizeSearch(value) {
+    return String(value || '').toLowerCase().normalize('NFD')
+      .replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  function haystack(p) {
+    return normalizeSearch(p.name + ' ' + p.category + ' ' + (p.aliases || []).join(' '));
+  }
   function matchPlace(p, q) {
-    if (!q) return true;
+    const normalizedQuery = normalizeSearch(q);
+    if (!normalizedQuery) return true;
     const h = haystack(p);
-    if (h.includes(q)) return true;
-    if (q.length < 4) return false;
-    const tol = q.length >= 6 ? 2 : 1;
-    return h.split(/[^a-z0-9]+/).some(t => t.length >= 3 && (lev(t, q) <= tol || lev(t.slice(0, q.length), q) <= tol));
+    if (h.includes(normalizedQuery)) return true;
+    const queryWords = normalizedQuery.split(/\\s+/).filter(Boolean);
+    const haystackWords = h.split(/\\s+/).filter(Boolean);
+    return queryWords.every(word => {
+      if (haystackWords.some(token => token.startsWith(word))) return true;
+      if (word.length < 4) return false;
+      const tolerance = word.length >= 7 ? 2 : 1;
+      return haystackWords.some(token => token.length >= 3 &&
+        (lev(token, word) <= tolerance || (token.length >= word.length && lev(token.slice(0, word.length), word) <= tolerance)));
+    });
   }
   function setStatus(msg, isErr) {
     $('status').textContent = msg || '';
@@ -296,7 +312,7 @@
 
   // ---- State ----
   let activeCat = 'All', query = '', selected = null, user = null;
-  let userMarker = null, watchId = null, routeLine = null, pickMode = false, routeInfo = null, trackTimer = null;
+  let userMarker = null, userAccuracyCircle = null, watchId = null, routeLine = null, pickMode = false, routeInfo = null, trackTimer = null;
   let routeRequestId = 0, routeAbortController = null;
 
   // ---- Map ----
@@ -473,6 +489,21 @@
     if (coordinatePeers.length) warnings.push('Pin-data issue: this exact coordinate is also assigned to ' + coordinatePeers.map(p => p.name).join(', ') + '. These locations may overlap on the map; their coordinates need verification.');
     $('p-warn').textContent = warnings.join(' ');
     $('p-warn').hidden = warnings.length === 0;
+    const peerBox = $('p-peers');
+    const peerButtons = $('p-peer-buttons');
+    peerButtons.replaceChildren();
+    if (coordinatePeers.length) {
+      coordinatePeers.forEach(peer => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = 'Select ' + peer.name;
+        button.addEventListener('click', () => selectPlace(peer.name, false));
+        peerButtons.appendChild(button);
+      });
+      peerBox.hidden = false;
+    } else {
+      peerBox.hidden = true;
+    }
     $('gmaps').href = 'https://www.google.com/maps/dir/?api=1&destination=' + selected.lat + ',' + selected.lng + '&travelmode=walking';
     $('report').href = reportUrl(selected);
   }
@@ -499,11 +530,28 @@
       userMarker.setLatLng([lat, lng]);
       userMarker.setTooltipContent(label || 'You are here');
     }
+    if (Number.isFinite(accuracyMeters) && accuracyMeters >= 0) {
+      if (!userAccuracyCircle) {
+        userAccuracyCircle = L.circle([lat, lng], { radius: accuracyMeters, color: '#2E7D5B', weight: 1, fillColor: '#2E7D5B', fillOpacity: 0.10, interactive: false }).addTo(map);
+      } else {
+        userAccuracyCircle.setLatLng([lat, lng]);
+        userAccuracyCircle.setRadius(accuracyMeters);
+      }
+    } else if (userAccuracyCircle) {
+      map.removeLayer(userAccuracyCircle);
+      userAccuracyCircle = null;
+    }
     const nearest = Math.min(...places.map(p => haversine(lat, lng, p.lat, p.lng)));
     if (nearest > 3000) {
       setStatus("You're about " + fmt(nearest) + " from the nearest campus place, so the map stays on campus. Try the demo location to see how it works.", true);
     } else {
-      if (msg) setStatus(msg + (Number.isFinite(accuracyMeters) ? ' GPS accuracy: about ±' + Math.round(accuracyMeters) + ' m.' : ''));
+      if (msg || (Number.isFinite(accuracyMeters) && accuracyMeters > 100)) {
+        const accuracyText = Number.isFinite(accuracyMeters) ? ' GPS accuracy: about ±' + Math.round(accuracyMeters) + ' m.' : '';
+        const lowAccuracyText = Number.isFinite(accuracyMeters) && accuracyMeters > 100
+          ? ' Your GPS position is imprecise; wait for a better fix or set your start point on the map.'
+          : '';
+        setStatus((msg || 'GPS position updated.') + accuracyText + lowAccuracyText, !!lowAccuracyText);
+      }
       if (pan) goTo([lat, lng], 17);
     }
     updatePanel();
@@ -682,8 +730,17 @@
       }
       if (data.code !== 'Ok' || !Array.isArray(data.routes) || !data.routes[0]) throw new Error(data.code || 'no-route');
       const r = data.routes[0];
-      if (!r.geometry || !Array.isArray(r.geometry.coordinates) || r.geometry.coordinates.length < 2 || !Number.isFinite(r.distance) || !Number.isFinite(r.duration)) throw new Error('invalid-route');
-      const straight = haversine(user.lat, user.lng, selected.lat, selected.lng);
+      if (!r.geometry || !Array.isArray(r.geometry.coordinates) || r.geometry.coordinates.length < 2 || !Number.isFinite(r.distance) || r.distance < 0 || !Number.isFinite(r.duration) || r.duration < 0) throw new Error('invalid-route');
+      const validCoordinate = pair => Array.isArray(pair) && pair.length >= 2 &&
+        Number.isFinite(pair[0]) && pair[0] >= -180 && pair[0] <= 180 &&
+        Number.isFinite(pair[1]) && pair[1] >= -90 && pair[1] <= 90;
+      if (!r.geometry.coordinates.every(validCoordinate)) throw new Error('invalid-route-coordinates');
+      const firstPoint = r.geometry.coordinates[0], lastPoint = r.geometry.coordinates[r.geometry.coordinates.length - 1];
+      if (haversine(start.lat, start.lng, firstPoint[1], firstPoint[0]) > 500 ||
+          haversine(destination.lat, destination.lng, lastPoint[1], lastPoint[0]) > 500) {
+        throw new Error('route-endpoints-mismatch');
+      }
+      const straight = haversine(start.lat, start.lng, destination.lat, destination.lng);
       const longRoute = straight > 30 && r.distance > straight * 2.2;
       const coords = r.geometry.coordinates;
       const first = coords[0], last = coords[coords.length - 1];
